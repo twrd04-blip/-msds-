@@ -253,48 +253,54 @@ async function startServer() {
 
   // Save Lab Managers
   app.post('/api/managers', (req, res) => {
-    const body = req.body;
-    let newManagers: Record<string, string> = {};
-    let renamed: { from: string; to: string }[] = [];
-    let deleted: string[] = [];
+    try {
+      const body = req.body;
+      let newManagers: Record<string, string> = {};
+      let renamed: { from: string; to: string }[] = [];
+      let deleted: string[] = [];
 
-    if (body && body.managers) {
-      newManagers = body.managers;
-      renamed = body.renamed || [];
-      deleted = body.deleted || [];
-    } else {
-      newManagers = body || {};
-    }
+      if (body && body.managers) {
+        newManagers = body.managers;
+        renamed = body.renamed || [];
+        deleted = body.deleted || [];
+      } else {
+        newManagers = body || {};
+      }
 
-    db.labManagers = newManagers;
+      db.labManagers = newManagers || {};
+      db.chemicals = db.chemicals || [];
 
-    // Propagate renamed laboratories to chemicals
-    if (Array.isArray(renamed)) {
-      for (const op of renamed) {
-        if (op.from && op.to) {
+      // Propagate renamed laboratories to chemicals
+      if (Array.isArray(renamed)) {
+        for (const op of renamed) {
+          if (op.from && op.to) {
+            db.chemicals.forEach(c => {
+              if (c.labName === op.from) {
+                c.labName = op.to;
+              }
+            });
+          }
+        }
+      }
+
+      // Propagate deleted laboratories to chemicals
+      if (Array.isArray(deleted)) {
+        for (const lab of deleted) {
           db.chemicals.forEach(c => {
-            if (c.labName === op.from) {
-              c.labName = op.to;
+            if (c.labName === lab) {
+              c.labName = '미지정';
             }
           });
         }
       }
-    }
 
-    // Propagate deleted laboratories to chemicals
-    if (Array.isArray(deleted)) {
-      for (const lab of deleted) {
-        db.chemicals.forEach(c => {
-          if (c.labName === lab) {
-            c.labName = '미지정';
-          }
-        });
-      }
+      logGlobalAction('시스템 관리자', '연구실 및 안전 담당자 구성 정보 변경 적용');
+      saveDB();
+      return res.json({ success: true, managers: db.labManagers });
+    } catch (error: any) {
+      console.error('Save Managers Error:', error);
+      return res.status(500).json({ error: error.message || '연구실 정보 저장 중 오류 발생' });
     }
-
-    logGlobalAction('시스템 관리자', '연구실 및 안전 담당자 구성 정보 변경 적용');
-    saveDB();
-    return res.json({ success: true, managers: db.labManagers });
   });
 
   // Get Global Logs
@@ -325,22 +331,21 @@ async function startServer() {
         fileMetadataMap.set(fileId, { filename: fileName, mimeType });
       }
 
-      let contents: any[] = [];
+      let contents: any;
       if (fileData && mimeType) {
         const base64Data = fileData.replace(/^data:.*?;base64,/, '');
-        contents.push({
+        const imagePart = {
           inlineData: {
             mimeType: mimeType,
             data: base64Data
           }
-        });
-        contents.push({
+        };
+        const textPart = {
           text: '이 MSDS 파일에서 화학물질명(제품명), CAS 번호, 제조자명, 유엔번호(UN No), 화학식(분자식), 권장 용도, 응급조치 요령 요약, 보관 및 취급방법 요약, GHS 위험 항목 분류, 그리고 한국 산업안전보건법 및 연구실 안전환경 조성법에 근거한 법적 규제 대상 여부(정밀안전진단, 작업환경측정, 특수건강검진) 및 해당 판정의 상세한 법적 구제 근거(판단근거), 그리고 추출 항목별 신뢰도 백분율을 추출해주세요.'
-        });
+        };
+        contents = { parts: [imagePart, textPart] };
       } else if (pastedText) {
-        contents.push({
-          text: `다음 MSDS 텍스트에서 주요 화학물질 정보를 추출하고 분석해주세요:\n\n${pastedText}`
-        });
+        contents = `다음 MSDS 텍스트에서 주요 화학물질 정보를 추출하고 분석해주세요:\n\n${pastedText}`;
       } else {
         return res.status(400).json({ error: '분석할 파일 또는 텍스트를 제공해야 합니다.' });
       }
@@ -371,7 +376,7 @@ async function startServer() {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-2.5-flash',
         contents: contents,
         config: {
           systemInstruction: promptInstructions,

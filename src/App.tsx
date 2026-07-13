@@ -722,37 +722,11 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-2.5">
-          {/* Excel Export Downloader */}
-          <a
-            href="/api/excel/export"
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-emerald-500/10"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>대장 Excel 내려받기</span>
-          </a>
-
-          {/* Excel Bulk Import Uploader */}
-          <label className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300/60 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
-            {excelStatus ? (
-              <>
-                <span className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin"></span>
-                <span>{excelStatus}</span>
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 text-slate-500" />
-                <span>기존 Excel 대장 올리기</span>
-              </>
-            )}
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              className="hidden"
-              onChange={handleExcelImport}
-              disabled={excelStatus !== null}
-            />
-          </label>
+        <div className="flex items-center space-x-3 text-xs">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-slate-600 font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            안전망 실시간 연결됨
+          </span>
         </div>
       </header>
 
@@ -834,7 +808,7 @@ export default function App() {
         {/* Left column (Sidebar tabs & manager setting & recent logs) */}
         <div className="xl:col-span-1 space-y-6">
           
-          {/* Lab Switching Tabs list */}
+          {/* 1. 소속 연구실 단위 대장 조회 */}
           <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs space-y-1">
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2.5 px-1.5 flex items-center gap-1.5">
               <span>🗂️ 소속 연구실 단위 대장 조회</span>
@@ -892,11 +866,118 @@ export default function App() {
             </div>
           </div>
 
-          {/* Lab designated safety managers panel */}
+          {/* 2. MSDS 등록 및 물질 추가 */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
+            <h2 className="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-3 pb-2 border-b border-slate-100">
+              <Sparkles className="w-4 h-4 text-purple-600 animate-pulse" /> 🧪 유해인자 및 MSDS 등록
+            </h2>
+            <div className="space-y-2">
+              <button
+                onClick={() => {
+                  if (selectedLab === '폐기 목록') {
+                    showFeedback('error', '폐기 목록 조회 중에는 신규 등록을 할 수 없습니다. 연구실을 먼저 선택해 주세요.');
+                    return;
+                  }
+                  setCurrentFormView(currentFormView === 'ai' ? 'list' : 'ai');
+                }}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                  currentFormView === 'ai'
+                    ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-500/20'
+                    : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-100'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>AI MSDS OCR 자동 분석 등록</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (selectedLab === '폐기 목록') {
+                    showFeedback('error', '폐기 목록 조회 중에는 신규 등록을 할 수 없습니다. 연구실을 먼저 선택해 주세요.');
+                    return;
+                  }
+                  setCurrentFormView(currentFormView === 'manual' ? 'list' : 'manual');
+                }}
+                className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border ${
+                  currentFormView === 'manual'
+                    ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
+                    : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-100'
+                }`}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>수동 물질 직접 등록</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. 문서 관리 */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
+            <h2 className="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-3 pb-2 border-b border-slate-100">
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> 📂 대장 파일 및 문서 관리
+            </h2>
+            <div className="space-y-2">
+              {/* Excel Export Downloader */}
+              <a
+                href="/api/excel/export"
+                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-emerald-500/10 text-center"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>대장 Excel 양식 내려받기</span>
+              </a>
+
+              {/* Excel Bulk Import Uploader */}
+              <label className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border-dashed">
+                {excelStatus ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin"></span>
+                    <span>{excelStatus}</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                    <span>기존 Excel 대장 반입하기</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  className="hidden"
+                  onChange={handleExcelImport}
+                  disabled={excelStatus !== null}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* 4. 변경 이력 */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
+            <h2 className="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-3 pb-2 border-b border-slate-100">
+              <Activity className="w-4 h-4 text-blue-500" /> 🕒 실시간 통합 작업 변경 이력
+            </h2>
+            <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
+              {globalLogs.length === 0 ? (
+                <p className="text-center text-slate-400 py-6 text-xs italic">기록된 이력이 없습니다.</p>
+              ) : (
+                [...globalLogs].reverse().map((log) => (
+                  <div key={log.id} className="text-[10px] border-b border-slate-50 pb-2 last:border-0">
+                    <div className="flex items-center justify-between text-slate-400 mb-0.5 font-medium">
+                      <span>{log.author}</span>
+                      <span className="font-mono text-[9px] flex items-center gap-0.5">
+                        <Clock className="w-2.5 h-2.5" /> {log.date?.substr(5, 11)}
+                      </span>
+                    </div>
+                    <p className="text-slate-800 font-semibold leading-normal">{log.action}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 5. 환경 설정 */}
           <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
             <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
               <h2 className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-500" /> 연구실 및 담당 안전관리자 구성
+                <Users className="w-4 h-4 text-blue-500" /> ⚙️ 연구실 및 안전관리자 구성
               </h2>
               {!editingManagers ? (
                 <button
@@ -937,11 +1018,11 @@ export default function App() {
 
             <div className="space-y-2.5 text-xs">
               <p className="text-[10px] text-slate-400 leading-relaxed mb-1">
-                ※ 해당 연구실 시약 및 MSDS 등록/변경 시, 지정된 관리자 서명이 자동으로 반영됩니다. 언제든 추가/수정/삭제를 진행할 수 있습니다.
+                ※ 연구실을 추가, 수정, 삭제하고 지정된 안전관리자 정보를 실시간 전파합니다.
               </p>
               
               {editingManagers ? (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                   {tempLabs.map((item) => (
                     <div key={item.keyId} className="flex items-center gap-1.5 py-1 border-b border-slate-50 last:border-0">
                       <input
@@ -991,7 +1072,7 @@ export default function App() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                   {Object.keys(managers).length === 0 ? (
                     <p className="text-center text-slate-400 py-4 italic text-[11px]">지정된 연구실이 없습니다. 우측 수정을 눌러 등록해 주세요.</p>
                   ) : (
@@ -1008,70 +1089,30 @@ export default function App() {
               )}
             </div>
           </div>
-
-          {/* Recent Global Work Logs feed */}
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
-            <h2 className="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-3 pb-2 border-b border-slate-100">
-              <Activity className="w-4 h-4 text-blue-500" /> 실시간 통합 작업 이력 대시보드
-            </h2>
-            <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1">
-              {globalLogs.length === 0 ? (
-                <p className="text-center text-slate-400 py-6 text-xs">기록된 이력이 없습니다.</p>
-              ) : (
-                [...globalLogs].reverse().map((log) => (
-                  <div key={log.id} className="text-[10px] border-b border-slate-50 pb-2.5 last:border-0">
-                    <div className="flex items-center justify-between text-slate-400 mb-0.5 font-medium">
-                      <span>{log.author}</span>
-                      <span className="font-mono text-[9px] flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5" /> {log.date?.substr(5, 11)}
-                      </span>
-                    </div>
-                    <p className="text-slate-800 font-semibold leading-normal">{log.action}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Right columns (Main actions & table view) */}
         <div className="xl:col-span-3 space-y-6 flex flex-col">
           
-          {/* Register control toggle buttons */}
-          {selectedLab !== '폐기 목록' && (
-            <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center space-x-1.5">
-                <Sparkles className="w-4 h-4 text-purple-600 animate-bounce" />
-                <span className="text-xs font-black text-slate-700">대장 편입 및 관리 자동화 엔진</span>
+          {/* Laboratory info banner */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center space-x-1.5 text-xs font-black text-slate-700">
+              <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                <Shield className="w-4 h-4" />
               </div>
-
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentFormView(currentFormView === 'ai' ? 'list' : 'ai')}
-                  className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-                    currentFormView === 'ai'
-                      ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-500/20'
-                      : 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-100'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>AI MSDS OCR 분석 등록</span>
-                </button>
-
-                <button
-                  onClick={() => setCurrentFormView(currentFormView === 'manual' ? 'list' : 'manual')}
-                  className={`px-4.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border ${
-                    currentFormView === 'manual'
-                      ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/20'
-                      : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-100'
-                  }`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>수동 물질 등록</span>
-                </button>
+              <div>
+                <span className="block text-slate-400 text-[10px] font-bold">선택된 관리 영역</span>
+                <span>{selectedLab}</span>
               </div>
             </div>
-          )}
+
+            {selectedLab !== '전체 연구실' && selectedLab !== '폐기 목록' && (
+              <div className="text-xs bg-slate-50 border border-slate-200/50 px-3 py-1.5 rounded-xl font-bold text-slate-600 flex items-center gap-1.5">
+                <span>👤 책임 안전관리자:</span>
+                <span className="text-slate-900 font-extrabold">{managers[selectedLab] || '미지정'}</span>
+              </div>
+            )}
+          </div>
 
           {/* 5. FORM VIEWS CONTAINER (MANUAL OR AI REVIEW) */}
           {currentFormView === 'manual' && selectedLab !== '폐기 목록' && (
