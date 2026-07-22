@@ -23,17 +23,6 @@ const HAZARD_LABELS: Record<keyof GhsHazards, string> = {
   environmentalHazard: '🐟 환경유해성'
 };
 
-const STORAGE_OPTIONS = [
-  '시약장-1',
-  '시약장-2',
-  '시약장-3',
-  '냉장보관',
-  '냉동보관',
-  '실린더 캐비닛',
-  '연구실 바닥',
-  '직접 입력'
-];
-
 const UNIT_OPTIONS = ['L', 'mL', 'kg', 'g', '개'];
 
 export default function DetailModal({ chemical, onClose, onUpdate, onDelete, onAddAttachment, managers }: DetailModalProps) {
@@ -47,12 +36,7 @@ export default function DetailModal({ chemical, onClose, onUpdate, onDelete, onA
   const [quantity, setQuantity] = useState(chemical.quantity);
   const [unit, setUnit] = useState(chemical.unit);
   const [labName, setLabName] = useState(chemical.labName || Object.keys(managers)[0] || '미지정');
-  const [customLocation, setCustomLocation] = useState(
-    STORAGE_OPTIONS.includes(chemical.location) ? '' : chemical.location
-  );
-  
-  const initialLocOption = STORAGE_OPTIONS.includes(chemical.location) ? chemical.location : '직접 입력';
-  const [locationOption, setLocationOption] = useState(initialLocOption);
+  const [locationOption, setLocationOption] = useState(chemical.location || '');
 
   const [ghsHazards, setGhsHazards] = useState<GhsHazards>({ ...chemical.ghsHazards });
   const [isSafetyDiagnosis, setIsSafetyDiagnosis] = useState(chemical.isSafetyDiagnosis);
@@ -97,7 +81,7 @@ export default function DetailModal({ chemical, onClose, onUpdate, onDelete, onA
     }
 
     setIsSaving(true);
-    const finalLocation = locationOption === '직접 입력' ? customLocation.trim() : locationOption;
+    const finalLocation = locationOption.trim();
     const authorStr = managers[labName] || '연구실 담당자';
 
     try {
@@ -617,18 +601,15 @@ export default function DetailModal({ chemical, onClose, onUpdate, onDelete, onA
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">보관장소 선택</label>
-                  <select
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">보관장소</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="예) 시약장-1, 냉장고 등"
                     value={locationOption}
                     onChange={(e) => setLocationOption(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-gray-200 bg-white rounded-lg focus:outline-none"
-                  >
-                    {STORAGE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-full px-3 py-2 text-xs border border-gray-200 bg-white rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  />
                 </div>
 
                 <div>
@@ -649,20 +630,6 @@ export default function DetailModal({ chemical, onClose, onUpdate, onDelete, onA
                     )}
                   </select>
                 </div>
-
-                {locationOption === '직접 입력' && (
-                  <div className="col-span-1 md:col-span-3">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">보관장소 직접 입력</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="예) 서랍장-A"
-                      value={customLocation}
-                      onChange={(e) => setCustomLocation(e.target.value)}
-                      className="w-full px-3 py-2 text-xs border border-gray-200 bg-white rounded-lg focus:outline-none"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Editable MSDS Additional fields */}
@@ -899,9 +866,7 @@ export default function DetailModal({ chemical, onClose, onUpdate, onDelete, onA
                 setManufacturer(chemical.manufacturer);
                 setQuantity(chemical.quantity);
                 setUnit(chemical.unit);
-                const isPreset = STORAGE_OPTIONS.includes(chemical.location);
-                setLocationOption(isPreset ? chemical.location : '직접 입력');
-                setCustomLocation(isPreset ? '' : chemical.location);
+                setLocationOption(chemical.location || '');
                 setGhsHazards({ ...chemical.ghsHazards });
                 setIsSafetyDiagnosis(chemical.isSafetyDiagnosis);
                 setIsWorkEnvMeasure(chemical.isWorkEnvMeasure);

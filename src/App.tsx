@@ -29,16 +29,6 @@ import {
   Info
 } from 'lucide-react';
 
-const STORAGE_OPTIONS = [
-  '시약장-1',
-  '시약장-2',
-  '시약장-3',
-  '냉장보관',
-  '냉동보관',
-  '실린더 캐비닛',
-  '연구실 바닥'
-];
-
 const UNIT_OPTIONS = ['L', 'mL', 'kg', 'g', '개'];
 
 const HAZARD_LABELS: Record<keyof GhsHazards, string> = {
@@ -88,7 +78,7 @@ export default function App() {
   const [manualManufacturer, setManualManufacturer] = useState('');
   const [manualQty, setManualQty] = useState<number>(1);
   const [manualUnit, setManualUnit] = useState('개');
-  const [manualLocation, setManualLocation] = useState('시약장-1');
+  const [manualLocation, setManualLocation] = useState('');
   const [manualLab, setManualLab] = useState('');
   const [manualGhs, setManualGhs] = useState<GhsHazards>({
     explosive: false, flammable: false, oxidizing: false, gasUnderPressure: false,
@@ -193,6 +183,11 @@ export default function App() {
       corrosive: false, acuteToxicity: false, healthHazard: false, irritant: false, environmentalHazard: false
     });
   };
+
+  // Dynamically compute unique locations from active chemicals
+  const uniqueLocations = Array.from(
+    new Set(chemicals.map(c => c.location).filter(Boolean))
+  ).sort();
 
   // Filter chemicals list according to query and filters
   const filteredChemicals = chemicals.filter(chem => {
@@ -910,44 +905,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* 3. 문서 관리 */}
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
-            <h2 className="text-xs font-black text-slate-700 flex items-center gap-1.5 mb-3 pb-2 border-b border-slate-100">
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> 📂 대장 파일 및 문서 관리
-            </h2>
-            <div className="space-y-2">
-              {/* Excel Export Downloader */}
-              <a
-                href="/api/excel/export"
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-emerald-500/10 text-center"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>대장 Excel 양식 내려받기</span>
-              </a>
 
-              {/* Excel Bulk Import Uploader */}
-              <label className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border-dashed">
-                {excelStatus ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin"></span>
-                    <span>{excelStatus}</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-3.5 h-3.5 text-slate-500" />
-                    <span>기존 Excel 대장 반입하기</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  className="hidden"
-                  onChange={handleExcelImport}
-                  disabled={excelStatus !== null}
-                />
-              </label>
-            </div>
-          </div>
 
           {/* 4. 변경 이력 */}
           <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs">
@@ -1095,7 +1053,7 @@ export default function App() {
         <div className="xl:col-span-3 space-y-6 flex flex-col">
           
           {/* Laboratory info banner */}
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
             <div className="flex items-center space-x-1.5 text-xs font-black text-slate-700">
               <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
                 <Shield className="w-4 h-4" />
@@ -1106,12 +1064,45 @@ export default function App() {
               </div>
             </div>
 
-            {selectedLab !== '전체 연구실' && selectedLab !== '폐기 목록' && (
-              <div className="text-xs bg-slate-50 border border-slate-200/50 px-3 py-1.5 rounded-xl font-bold text-slate-600 flex items-center gap-1.5">
-                <span>👤 책임 안전관리자:</span>
-                <span className="text-slate-900 font-extrabold">{managers[selectedLab] || '미지정'}</span>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
+              {selectedLab !== '전체 연구실' && selectedLab !== '폐기 목록' && (
+                <div className="text-[11px] bg-slate-50 border border-slate-200/50 px-3 py-1.5 rounded-lg font-bold text-slate-600 flex items-center gap-1.5 h-8">
+                  <span>👤 책임 안전관리자:</span>
+                  <span className="text-slate-900 font-extrabold">{managers[selectedLab] || '미지정'}</span>
+                </div>
+              )}
+
+              {/* Excel Export Downloader */}
+              <a
+                href="/api/excel/export"
+                className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-emerald-500/10 text-center whitespace-nowrap h-8"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>대장 Excel 양식 내려받기</span>
+              </a>
+
+              {/* Excel Bulk Import Uploader */}
+              <label className="py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition-all flex items-center gap-1.5 cursor-pointer border-dashed border-slate-300 whitespace-nowrap h-8">
+                {excelStatus ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin"></span>
+                    <span>{excelStatus}</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                    <span>기존 Excel 대장 반입하기</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept=".xlsx, .xls"
+                  className="hidden"
+                  onChange={handleExcelImport}
+                  disabled={excelStatus !== null}
+                />
+              </label>
+            </div>
           </div>
 
           {/* 5. FORM VIEWS CONTAINER (MANUAL OR AI REVIEW) */}
@@ -1191,15 +1182,14 @@ export default function App() {
 
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">보관장소 지정</label>
-                  <select
+                  <input
+                    type="text"
+                    required
+                    placeholder="예) 시약장-1, 냉장고 등"
                     value={manualLocation}
                     onChange={(e) => setManualLocation(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none"
-                  >
-                    {STORAGE_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
+                    className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
                 </div>
 
                 <div>
@@ -1578,15 +1568,14 @@ export default function App() {
 
                     <div>
                       <label className="block font-bold text-slate-700 mb-1">보관장소 지정</label>
-                      <select
-                        value={aiParsedResult.location || '시약장-1'}
+                      <input
+                        type="text"
+                        required
+                        placeholder="예) 시약장-1, 냉장고 등"
+                        value={aiParsedResult.location || ''}
                         onChange={(e) => setAiParsedResult({ ...aiParsedResult, location: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none"
-                      >
-                        {STORAGE_OPTIONS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
+                        className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                      />
                     </div>
 
                     <div>
@@ -1776,8 +1765,8 @@ export default function App() {
                   title="보관장소 필터"
                 >
                   <option value="전체">보관장소: 전체</option>
-                  {STORAGE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
+                  {uniqueLocations.map((loc) => (
+                    <option key={loc} value={loc}>{loc}</option>
                   ))}
                 </select>
               </div>
