@@ -246,7 +246,13 @@ export default function App() {
     }
 
     setSubmitting(true);
-    const registrar = managers[manualLab] || '안전 담당자';
+    const targetLab = manualLab || Object.keys(managers)[0] || '';
+    if (!targetLab) {
+      showFeedback('error', '지정 가능한 연구실이 없습니다. 연구실을 먼저 추가등록해 주세요.');
+      setSubmitting(false);
+      return;
+    }
+    const registrar = managers[targetLab] || '안전 담당자';
 
     try {
       const payload: Partial<Chemical> = {
@@ -256,7 +262,7 @@ export default function App() {
         quantity: Number(manualQty),
         unit: manualUnit,
         location: manualLocation,
-        labName: manualLab,
+        labName: targetLab,
         ghsHazards: manualGhs,
         isSafetyDiagnosis: manualSafety,
         isWorkEnvMeasure: manualWorkEnv,
@@ -511,7 +517,13 @@ export default function App() {
     if (!aiParsedResult) return;
 
     setSubmitting(true);
-    const registrar = managers[aiLab] || '안전 담당자';
+    const targetLab = aiLab || Object.keys(managers)[0] || '';
+    if (!targetLab) {
+      showFeedback('error', '지정 가능한 연구실이 없습니다. 연구실을 먼저 추가등록해 주세요.');
+      setSubmitting(false);
+      return;
+    }
+    const registrar = managers[targetLab] || '안전 담당자';
 
     try {
       const payload: Partial<Chemical> = {
@@ -521,7 +533,7 @@ export default function App() {
         quantity: Number(aiParsedResult.quantity || 1), // users set quantity in review form
         unit: aiParsedResult.unit || '개',
         location: aiParsedResult.location || '시약장-1',
-        labName: aiLab,
+        labName: targetLab,
         ghsHazards: aiParsedResult.ghsHazards,
         isSafetyDiagnosis: aiParsedResult.isSafetyDiagnosis,
         isWorkEnvMeasure: aiParsedResult.isWorkEnvMeasure,

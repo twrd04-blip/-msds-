@@ -435,7 +435,14 @@ async function startServer() {
         throw new Error('Gemini API로부터 응답을 추출하지 못했습니다.');
       }
 
-      const parsedData = JSON.parse(resultText);
+      // Robust JSON Parsing helper to clean any potential markdown formatting
+      let cleanedJsonText = resultText.trim();
+      if (cleanedJsonText.startsWith('```')) {
+        cleanedJsonText = cleanedJsonText.replace(/^```(?:json)?\n?/i, '');
+        cleanedJsonText = cleanedJsonText.replace(/\n?```$/, '');
+      }
+
+      const parsedData = JSON.parse(cleanedJsonText.trim());
 
       // Attach file metadata if uploaded
       if (fileId) {
@@ -482,14 +489,23 @@ async function startServer() {
       }
 
       // Check Duplication: Same lab, non-waste state, same CAS or (Name + Manufacturer)
-      const inputCas = incoming.casNo?.trim();
-      const inputName = incoming.name?.trim();
-      const inputManufacturer = incoming.manufacturer?.trim();
+      const inputCas = (incoming.casNo || '').trim();
+      const inputName = (incoming.name || '').trim();
+      const inputManufacturer = (incoming.manufacturer || '').trim();
 
       let existingIndex = db.chemicals.findIndex(c => {
-        if (c.labName !== incoming.labName || c.status === '폐기') return false;
-        if (inputCas && c.casNo && inputCas === c.casNo.trim()) return true;
-        if (!inputCas && !c.casNo && inputName === c.name.trim() && inputManufacturer === c.manufacturer?.trim()) return true;
+        if (!c || c.status === '폐기') return false;
+        
+        const chemLab = (c.labName || '').trim();
+        const incomingLab = (incoming.labName || '').trim();
+        if (chemLab !== incomingLab) return false;
+
+        const chemCas = (c.casNo || '').trim();
+        const chemName = (c.name || '').trim();
+        const chemManufacturer = (c.manufacturer || '').trim();
+
+        if (inputCas && chemCas && inputCas === chemCas) return true;
+        if (!inputCas && !chemCas && inputName && chemName && inputName === chemName && inputManufacturer === chemManufacturer) return true;
         return false;
       });
 
