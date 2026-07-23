@@ -34,51 +34,112 @@ export default async function handler(req: any, res: any) {
     );
 
     const response = await ai.models.generateContent({
-  model: "gemini-2.5-flash",
-  contents: [
-    {
-      parts: [
+      model: "gemini-2.5-flash",
+
+      contents: [
         {
-          inlineData: {
-            mimeType,
-            data: base64Data
-          }
-        },
-        {
-          text:
-            "이 MSDS 파일에서 물질명, CAS 번호, 제조사를 추출해서 JSON으로 반환해주세요."
+          parts: [
+            {
+              inlineData: {
+                mimeType,
+                data: base64Data
+              }
+            },
+            {
+              text:
+                `
+이 MSDS 문서를 분석해주세요.
+
+반드시 JSON 형식으로만 반환하세요.
+
+추출 항목:
+- 물질명(name)
+- CAS 번호(casNo)
+- 제조사(manufacturer)
+
+정보가 없으면 빈 문자열("")로 입력하세요.
+`
+            }
+          ]
         }
-      ]
+      ],
+
+      config: {
+        responseMimeType: "application/json",
+
+        responseSchema: {
+          type: Type.OBJECT,
+
+          properties: {
+            name: {
+              type: Type.STRING
+            },
+
+            casNo: {
+              type: Type.STRING
+            },
+
+            manufacturer: {
+              type: Type.STRING
+            }
+          },
+
+          required: [
+            "name"
+          ]
+        }
+      }
+    });
+
+
+    // Gemini 응답 확인용 로그
+    console.log(
+      "GEMINI RESPONSE:",
+      JSON.stringify(response)
+    );
+
+
+    const text = response.text || "{}";
+
+
+    console.log(
+      "GEMINI TEXT:",
+      text
+    );
+
+
+    let parsed;
+
+    try {
+
+      parsed = JSON.parse(text);
+
+    } catch (jsonError) {
+
+      console.error(
+        "JSON PARSE ERROR:",
+        jsonError
+      );
+
+      parsed = {
+        name: "",
+        casNo: "",
+        manufacturer: "",
+        raw: text
+      };
     }
-  ],
 
-  config: {
-    responseMimeType: "application/json",
-    responseSchema: {
-      type: Type.OBJECT,
-      properties: {
-        name: { type: Type.STRING },
-        casNo: { type: Type.STRING },
-        manufacturer: { type: Type.STRING }
-      },
-      required: [
-        "name",
-        "casNo",
-        "manufacturer"
-      ]
-    }
-  }
-});
 
-   const text = response.text || "{}";
+    return res.status(200).json(parsed);
 
-const parsed = JSON.parse(text);
-
-return res.status(200).json(parsed); 
 
   } catch (error: any) {
 
-    console.error(error);
+    console.error(
+      "GEMINI ERROR:",
+      error
+    );
+
 
     return res.status(500).json({
       error: error.message
