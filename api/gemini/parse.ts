@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 export default async function handler(req: any, res: any) {
   try {
@@ -34,28 +34,47 @@ export default async function handler(req: any, res: any) {
     );
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
-      contents: [
+  model: "gemini-3.6-flash",
+  contents: [
+    {
+      parts: [
         {
-          parts: [
-            {
-              inlineData: {
-                mimeType,
-                data: base64Data
-              }
-            },
-            {
-              text:
-                "이 MSDS 파일에서 물질명, CAS 번호, 제조사를 추출해서 JSON으로 반환해주세요."
-            }
-          ]
+          inlineData: {
+            mimeType,
+            data: base64Data
+          }
+        },
+        {
+          text:
+            "이 MSDS 파일에서 물질명, CAS 번호, 제조사를 추출해서 JSON으로 반환해주세요."
         }
       ]
-    });
+    }
+  ],
 
-    return res.status(200).json({
-      result: response.text
-    });
+  config: {
+    responseMimeType: "application/json",
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING },
+        casNo: { type: Type.STRING },
+        manufacturer: { type: Type.STRING }
+      },
+      required: [
+        "name",
+        "casNo",
+        "manufacturer"
+      ]
+    }
+  }
+});
+
+   const text = response.text || "{}";
+
+const parsed = JSON.parse(text);
+
+return res.status(200).json(parsed); 
 
   } catch (error: any) {
 
