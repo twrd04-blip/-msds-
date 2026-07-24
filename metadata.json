@@ -1,6 +1,6 @@
 {
-  "name": "유해인자 관리대장 자동화 시스템",
-  "description": "GHS 유해성 분류와 응급조치 등 복잡한 MSDS 정보를 AI OCR로 자동 등록하고, 정밀안전진단, 작업환경측정, 특수건강검진 등 법적 대상 여부를 실시간 판정하며, 상세 변경 이력을 추적 및 기록하는 지능형 유해인자관리대장입니다.",
+  "name": "",
+  "description": "",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
